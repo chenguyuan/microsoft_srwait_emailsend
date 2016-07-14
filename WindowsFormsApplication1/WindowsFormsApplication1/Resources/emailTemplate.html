@@ -1,0 +1,80 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">    
+<html xmlns="http://www.w3.org/1999/xhtml" >    
+<head>    
+    <title>HTML Report</title>    
+</head>    
+<body>    
+<p >Hi $USER_NAME$,</p>    
+    
+    
+<p>Thank you for your time on viewing this email. The followings are your recent cases and their corresponding status:</p>    
+
+$TABLEREPLACE$
+
+    <p>&nbsp;</p>
+    <p>Please take note of the meaning and future possible actions  of the case status:</p>
+    <table border="1" cellspacing="0" cellpadding="0">
+        <tr>
+            <td width="299">
+                <br />
+                Pending CTS&nbsp;
+            </td>
+            <td width="299">
+                <p>
+                    After the scope the case is automatically in this state.&nbsp; <br />
+                    The case should have &quot;Pending CTS&quot; state every time the    next action is on CSS side.
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td width="299"><p>Pending Customer&nbsp; </p></td>
+            <td width="299"><p>You are waiting for information or data from customer </p></td>
+        </tr>
+        <tr>
+            <td width="299"><p>Pending Development&nbsp; </p></td>
+            <td width="299"><p>You are waiting for an update from Product Group or fixes to be    deployed&nbsp; </p></td>
+        </tr>
+        <tr>
+            <td width="299"><p>Pending Operations&nbsp; </p></td>
+            <td width="299">
+                <p>
+                    You are waiting for Operations team&nbsp; <br />
+                    Note: if operations team involves PG than you will have to change    status to &quot;Pending Development&quot;
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td width="299"><p>Mitigated-Pending RFC&nbsp; </p></td>
+            <td width="299"><p>The customer problem was resolved or a workaround provided, but    we are waiting for a Root Cause Analysis (RCA)&nbsp; </p></td>
+        </tr>
+        <tr>
+            <td width="299"><p>SD-Pending Confirmation&nbsp; </p></td>
+            <td width="299">
+                <p>
+                    You sent information or steps to customer that could resolve the    problem <br />
+                    Note: time is    limited to 60 mins for shifting this state to SD-Solution Confirmed
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td width="299"><p>SD-Solution Confirmed&nbsp; </p></td>
+            <td width="299"><p>Use this state when customer confirmed that the problem is    resolved, but the case cannot be closed yet </p></td>
+        </tr>
+        <tr>
+            <td width="299"><p>Pending Premier&nbsp; </p></td>
+            <td width="299"><p>For Premier customer if TAM needs to follow up on the case&nbsp; </p></td>
+        </tr>
+        <tr>
+            <td width="299"><p>Pending 3rd party&nbsp; </p></td>
+            <td width="299"><p>Use this wait state if the next action is on a 3rd party&nbsp; </p></td>
+        </tr>
+        <tr>
+            <td width="299"><p>Recovery&nbsp; </p></td>
+            <td width="299"><p>An SR Task &quot;Customer Recovery&quot; had to be opened and the    SR is only waiting for this task&nbsp; </p></td>
+        </tr>
+    </table>
+    <p>Feel free to contact us if you have further doubts on this  reminder.</p>
+    <p>Best Regards,</p>  
+    <p>$MY_NAME$</p>    
+</body>    
+</html>    
