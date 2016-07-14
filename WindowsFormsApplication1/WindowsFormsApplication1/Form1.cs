@@ -19,14 +19,16 @@ namespace WindowsFormsApplication1
 {
     public partial class Form1 : Form
     {
-        public string filePath = "C:\\Users\\t-guch\\Downloads\\Case Wellness.xlsx";//excel的存储地址,需要变动
+        public string filePath = "";//excel的存储地址,需要变动
         public List<string> emplyee = new List<string>(); //员工姓名列表
         public List<Emplyee> EmplyeeList = new List<Emplyee>();
         public DataTable dt = new DataTable();//源数据
         //状态字符串，共10种，0-9
-        public string[] SRWaitstate = new string[] { "Pending CTS", "Pending Customer", "Pending Development", "Pending Operations", "Mitigated-Pending RFC", "Solution Delivered - Pending Confirmation", "Solution Delivered - Solution Confirmed", "Pending Premier", "Pending 3rd party", "Recovery" };
-
+        public string[] SRWaitstate = new string[] { "Pending 3rd party", "Pending CTS", "Pending Customer", "Pending Development", "Pending Operations", "Pending Premier", "Recovery", "Mitigated-Pending RFC", "Solution Delivered - Pending Confirmation", "Solution Delivered - Solution Confirmed" };
+        public string[] SRWaitstateexplain = new string[] { "Select when the responsible party of current key action in this SR is a non-CSS team (for collaborations) or an outside 3rd party.", "The default case status on SR creation. Select when the responsible party of current key action in this SR is case owner. Also use when no other allowed wait state category is appropriate.","Select when the responsible party of current key action in this SR is customer/partner.", "Select when the responsible party of current key action in this SR is engineering group (for example Bugs / RFCs / Hotfixes / CFLs)", "DO NOT USE – see Pending Development","DO NOT USE", "DO NOT USE", "DO NOT USE – see Pending Development", "Select when the solution to the problem is offered to the customer/partner and we are waiting for customer/partner confirmation.", "Select when the customer/partner has successfully confirmed the offered solution is accepted by the customer/partner." };
         ExchangeService Exservice = new ExchangeService();//exchange连接
+
+      
 
         public partial class Emplyee
         {
@@ -44,6 +46,8 @@ namespace WindowsFormsApplication1
         {
 
             InitializeComponent();
+            textBox1.Text = Read("C:\\Users\\t-guch\\Source\\Repos\\NewRepo\\WindowsFormsApplication1\\LastFilePath.txt");
+            filePath = textBox1.Text.ToString();
             if (File.Exists(filePath))//判断默认位置是否有excel
             {
                 EmplyeelistInitialize();
@@ -73,13 +77,16 @@ namespace WindowsFormsApplication1
             if (emplyee.Count > 2)
             {
                 int num = 0;
-                progressBar1.Visible = true;
-                progressBar1.Value = 3;
-                progressBar1.Maximum = emplyee.Count + 8;
-                progressBar1.BringToFront();
                 progressBar1.Show();
+                progressBar1.Visible = true;
+                progressBar1.Maximum = emplyee.Count + 10;
+                progressBar1.Value = 2;
+                progressBar1.BringToFront();
+                label6.Visible = true;
+                
                 try
                 {
+                    progressBar1.Value +=2;
                     string toolUser = string.Empty;
                     toolUser = comboBox2.SelectedItem.ToString();
                     exserviceSet(toolUser);
@@ -94,13 +101,19 @@ namespace WindowsFormsApplication1
                     }
                     //正式发邮件
                     string emailTo = string.Empty;
-                    foreach (Emplyee em in EmplyeeList)
-                    {
-                        emailTo = "t-guch" + "@microsoft.com";
-                        if (sendEmailbyExchange(emailTo, em.emailBody)) { num++; };
-                        progressBar1.Value++;
 
-                    }
+                    //测试用
+                    emailTo = "t-guch" + "@microsoft.com";
+                    if (sendEmailbyExchange(emailTo, EmplyeeList[2].emailBody)) { num++; };
+                    progressBar1.Value++;
+                    //正式代码
+                    //foreach (Emplyee em in EmplyeeList)
+                    //{
+                    //    emailTo = "t-guch" + "@microsoft.com";
+                    //    if (sendEmailbyExchange(emailTo, em.emailBody)) { num++; };
+                    //    progressBar1.Value++;
+
+                    //}
                     //MessageBox.Show(x.ToString());
                 }
                 catch (Exception ex)
@@ -109,6 +122,7 @@ namespace WindowsFormsApplication1
                 }
                 progressBar1.Hide();
                 progressBar1.Visible = false;
+                label6.Visible = false;
                 MessageBox.Show("send" + num.ToString() + "emails");
             }
             else { MessageBox.Show("Please get the Excel first!"); }
@@ -146,7 +160,7 @@ namespace WindowsFormsApplication1
             string htmltable = string.Empty;
             
             StringBuilder sb = new StringBuilder();
-            sb.Append("<table width=\"95%\" border=\"1\" cellpadding=\"2\" cellspacing=\"1\">");
+            sb.Append("<table width=\"98%\" border=\"1\" cellpadding=\"0\" cellspacing=\"0\" align=\"center\" style=\"border - collapse:collapse; \">");
 
             //表内容
             if (dt.Rows.Count > 1)
@@ -164,6 +178,7 @@ namespace WindowsFormsApplication1
 
                 foreach (string statename in SRWaitstate)
                 {
+                    
                     bool flag = false;//标记是不是写过标题栏了
                     foreach (DataRow dr in temptable.Rows)
                     {
@@ -173,29 +188,29 @@ namespace WindowsFormsApplication1
                             if (flag == false)//写标题行
                             {
                                 sb.Append("  <tr>");
-                                sb.Append("    <th colspan=\"5\" bgcolor=\"#FFCC00\" scope=\"col\">SRWait State:" + statename + "</th>");
+                                sb.Append("    <th colspan=\"5\" bgcolor=\"#4682B4\" class=\"titlemike\" scope=\"col\">SRWait State:" + statename + "</th>");
                                 sb.Append("  </tr>");
                                 sb.Append("  <tr>");
-                                sb.Append("    <th width=\"130\" bgcolor=\"#00FFCC\" scope=\"col\">Service Request Number</th>");
-                                sb.Append("    <th nowrap bgcolor=\"#00FFCC\" scope=\"col\">SRTitle Internal</th>");
-                                sb.Append("    <th width=\"70\" bgcolor=\"#00FFCC\" scope=\"col\">Days Open</th>");
-                                sb.Append("    <th width=\"70\" bgcolor=\"#00FFCC\" scope=\"col\">Total Labor Minutes</th>");
-                                sb.Append("    <th width=\"100\" bgcolor=\"#00FFCC\" scope=\"col\"><p>Labor Idle");
+                                sb.Append("    <th width=\"130\" bgcolor=\"#42B0B9\" class=\"titlemike\" scope =\"col\">Service Request Number</th>");
+                                sb.Append("    <th nowrap bgcolor=\"#42B0B9\" class=\"titlemike\" scope=\"col\">SRTitle Internal</th>");
+                                sb.Append("    <th width=\"70\" bgcolor=\"#42B0B9\" class=\"titlemike\" scope=\"col\">Days Open</th>");
+                                sb.Append("    <th width=\"70\" bgcolor=\"#42B0B9\" class=\"titlemike\" scope=\"col\">Total Labor Minutes</th>");
+                                sb.Append("    <th width=\"120\" bgcolor=\"#42B0B9\" class=\"titlemike\" scope=\"col\"><p>Labor Idle");
                                 sb.Append("    <strong>(days from last labor date)</strong></p></th>  ");
                                 sb.Append("  </tr>");
                                 sb.Append("<tr>");
-                                sb.Append("    <td><a href=\"mssv://sr/?" + dr["Column1"] + "\">" + dr["Column1"] + "</a></td>");
-                                sb.Append("    <td>" + dr["Column2"] + "</td>");
-                                sb.Append("    <td>" + dr["Column3"] + "</td><td>" + dr["Column4"] + "</td><td>" + dr["Column5"] + "</td>");
+                                sb.Append("    <td align=\"center\"><a href=\"mssv://sr/?" + dr["Column1"] + "\">" + dr["Column1"] + "</a></td>");
+                                sb.Append("    <td align=\"center\">" + dr["Column2"] + "</td>");
+                                sb.Append("    <td align=\"center\">" + dr["Column3"] + "</td><td align=\"center\">" + dr["Column4"] + "</td><td align=\"center\">" + dr["Column5"] + "</td>");
                                 sb.Append("  </tr>");
                                 flag = true;
                             }
                             else
                             {
                                 sb.Append("<tr>");
-                                sb.Append("    <td><a href=\"mssv://sr/?"+dr["Column1"]+"\">" + dr["Column1"] + "</a></td>");
-                                sb.Append("    <td>" + dr["Column2"] + "</td>");
-                                sb.Append("    <td>" + dr["Column3"] + "</td><td>" + dr["Column4"] + "</td><td>" + dr["Column5"] + "</td>");
+                                sb.Append("    <td align=\"center\"><a href=\"mssv://sr/?" + dr["Column1"] + "\">" + dr["Column1"] + "</a></td>");
+                                sb.Append("    <td align=\"center\">" + dr["Column2"] + "</td>");
+                                sb.Append("    <td align=\"center\">" + dr["Column3"] + "</td><td align=\"center\">" + dr["Column4"] + "</td><td align=\"center\">" + dr["Column5"] + "</td>");
                                 sb.Append("  </tr>");
                             }
                         }
@@ -240,39 +255,6 @@ namespace WindowsFormsApplication1
             return true;
         }
 
-        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
-        {
-
-        }
-        #region 管理文件路径
-        ////没写好这里
-        //private void filepathlog()
-        //{
-        //    string file = Application.ExecutablePath + "cache.txt";
-        //    string content = "mike";
-        //    if (!File.Exists(file) == true)
-        //    {
-        //        MessageBox.Show("存在此文件!");
-        //    }
-        //    else
-        //    {
-        //        FileStream myFs = new FileStream(file, FileMode.Create);
-        //        StreamWriter mySw = new StreamWriter(myFs);
-        //        mySw.Write(content);
-        //        mySw.Close();
-        //        myFs.Close();
-        //        MessageBox.Show("写入成功");
-        //    }            
-        //}
-
-
-
-        private void btnPath_Click(object sender, EventArgs e)
-        {
-            
-        }
-        #endregion
-
         /// <summary>     
         ///替换HTML模板中的字段值     
         /// </summary>     
@@ -313,134 +295,83 @@ namespace WindowsFormsApplication1
             return result;
         }
 
-
-        #region 参考邮件发送方法
-
-        private void sendemail()
+        #region 管理文件路径
+        public string Read(string path)//读文件
         {
-            try
+            FileStream sr = File.Open(path, FileMode.Open);
+            char[] chs = new char[sr.Length];
+            for (int i = 0; i < sr.Length; i++)
             {
-                //确定smtp服务器地址。实例化一个Smtp客户端
-                System.Net.Mail.SmtpClient client = new System.Net.Mail.SmtpClient("smtp.163.com");
-                //生成一个发送地址
-                string strFrom = string.Empty;
-                strFrom = "qingchuntongji@163.com";
-
-                //构造一个发件人地址对象
-                MailAddress from = new MailAddress(strFrom, "guyuan", Encoding.UTF8);
-                //构造一个收件人地址对象
-                MailAddress to = new MailAddress("330943592@qq.com", "guyuanchen", Encoding.UTF8);
-
-                //构造一个Email的Message对象
-                MailMessage message = new MailMessage(from, to);
-
-                ////为 message 添加附件
-                //foreach (TreeNode treeNode in treeViewFileList.Nodes)
-                //{
-                //    //得到文件名
-                //    string fileName = treeNode.Text;
-                //    //判断文件是否存在
-                //    if (File.Exists(fileName))
-                //    {
-                //        //构造一个附件对象
-                //        Attachment attach = new Attachment(fileName);
-                //        //得到文件的信息
-                //        ContentDisposition disposition = attach.ContentDisposition;
-                //        disposition.CreationDate = System.IO.File.GetCreationTime(fileName);
-                //        disposition.ModificationDate = System.IO.File.GetLastWriteTime(fileName);
-                //        disposition.ReadDate = System.IO.File.GetLastAccessTime(fileName);
-                //        //向邮件添加附件
-                //        message.Attachments.Add(attach);
-                //    }
-                //    else
-                //    {
-                //        MessageBox.Show("文件" + fileName + "未找到！");
-                //    }
-                //}
-
-                //添加邮件主题和内容
-                message.Subject = "test";
-                message.SubjectEncoding = Encoding.UTF8;
-                message.Body = "test";
-                message.BodyEncoding = Encoding.UTF8;
-
-                //设置邮件的信息
-                client.DeliveryMethod = SmtpDeliveryMethod.Network;
-                message.BodyEncoding = System.Text.Encoding.UTF8;
-                message.IsBodyHtml = false;
-
-                //如果服务器支持安全连接，则将安全连接设为true。
-                //gmail支持，163不支持，如果是gmail则一定要将其设为true
-                //if (cmbBoxSMTP.SelectedText == "smpt.163.com")
-                client.EnableSsl = false;
-                // else
-                //client.EnableSsl = true;
-
-                //设置用户名和密码。
-                //string userState = message.Subject;
-                client.UseDefaultCredentials = false;
-                string username = "qingchuntongji@163.com";
-                string passwd = "qingchunTJ";
-                //用户登陆信息
-                NetworkCredential myCredentials = new NetworkCredential(username, passwd);
-                client.Credentials = myCredentials;
-                //发送邮件
-                client.Send(message);
-                //提示发送成功
-                MessageBox.Show("发送成功!");
+                chs[i] = (char)sr.ReadByte();
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
-        } //普通email
-        private void sendEmailbyHtml(string email_from, string email_to, string email_cc, string strbody)
-        {
-            try
-            {
-                // 建立一个邮件实体     
-                MailAddress from = new MailAddress(email_from);
-
-
-                MailAddress to = new MailAddress(email_to);
-                MailMessage message = new MailMessage(from, to);
-
-
-                if (email_cc.ToString() != string.Empty)
-                {
-                    foreach (string ccs in email_cc.Split(';'))
-                    {
-                        MailAddress cc = new MailAddress(ccs);
-                        message.CC.Add(cc);
-                    }
-                }
-
-                message.IsBodyHtml = true;
-                message.BodyEncoding = System.Text.Encoding.UTF8;
-                message.Priority = MailPriority.High;
-                message.Body = strbody;  //邮件BODY内容    
-                message.Subject = "Subject";
-                //微软内部的smtp怎么使用
-                //System.Net.Mail.SmtpClient client = new System.Net.Mail.SmtpClient("smtp.microsoft.com");
-                //client.Credentials = new System.Net.NetworkCredential("t-guch@microsoft.com", "Mike704@ms");
-
-                //外部邮件
-                System.Net.Mail.SmtpClient client = new System.Net.Mail.SmtpClient("smtp.163.com");
-                client.Credentials = new System.Net.NetworkCredential("qingchuntongji@163.com", "qingchunTJ");
-
-                client.Send(message); //发送邮件    
-
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
+            string ss = new string(chs);
+            sr.Close();
+            return ss;
 
         }
 
-
+        private void btnPath_Click(object sender, EventArgs e)//change file path
+        {
+            OpenFileDialog open = new OpenFileDialog();
+            if (open.ShowDialog() == DialogResult.OK)
+            {
+                textBox1.Text = open.FileName;
+            }
+            filePath = textBox1.Text.ToString();
+            EmplyeelistInitialize();
+            EditFile(filePath, "C:\\Users\\t-guch\\Source\\Repos\\NewRepo\\WindowsFormsApplication1\\LastFilePath.txt");
+        }
+        public static void EditFile(string newLineValue, string patch)//修改patch
+        {
+            FileStream fs = new FileStream(patch, FileMode.Create, FileAccess.Write);
+            StreamWriter sw = new StreamWriter(fs);
+            sw.Write(newLineValue);
+            sw.Close();
+            fs.Close();
+        }
         #endregion
+
+        private void getExcelbutton_Click(object sender, EventArgs e)//获取excel
+        {
+            HtmlElementCollection elemList = this.webBrowser1.Document.GetElementsByTagName("a");
+            foreach (HtmlElement elem in elemList)
+            {
+                String nameStr = elem.GetAttribute("title");
+                if (nameStr == "Excel")
+                {
+                    elem.InvokeMember("click");
+                }
+            }
+        }
+        public static int countnum = 0;
+        private void webBrowser1_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
+        {
+            if (countnum == 0)
+            {
+                webBrowser1.Document.GetElementById("ReportViewerControl_ctl04_ctl00").InvokeMember("click");
+                countnum++;
+            }
+        }
+
+        private void exitBtn_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (File.Exists(filePath))//判断默认位置是否有excel
+                {
+                    File.Delete(filePath);
+                }
+            }
+            catch (Exception ex)
+            { throw ex; }
+            System.Environment.Exit(0);
+        }//退出键
+        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
+
     }
 
-    
+
 }
