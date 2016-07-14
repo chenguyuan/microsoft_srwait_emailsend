@@ -20,21 +20,35 @@ namespace WindowsFormsApplication1
     public partial class Form1 : Form
     {
         public string filePath = "C:\\Users\\t-guch\\Downloads\\Case Wellness.xlsx";//excel的存储地址,需要变动
-        public List<string> emplyee = new List<string>(); //员工列表
-        public List<int[]> statecount = new List<int[]>();//状态数组的list
+        public List<string> emplyee = new List<string>(); //员工姓名列表
+        public List<Emplyee> EmplyeeList = new List<Emplyee>();
         public DataTable dt = new DataTable();//源数据
         //状态字符串，共10种，0-9
         public string[] SRWaitstate = new string[] { "Pending CTS", "Pending Customer", "Pending Development", "Pending Operations", "Mitigated-Pending RFC", "Solution Delivered - Pending Confirmation", "Solution Delivered - Solution Confirmed", "Pending Premier", "Pending 3rd party", "Recovery" };
 
         ExchangeService Exservice = new ExchangeService();//exchange连接
 
+        public partial class Emplyee
+        {
+            public string alias;
+            public string emailtable;
+            public string emailBody;
+            public Emplyee(string emplyeealias)
+            {
+                this.alias = emplyeealias;
+            }
+
+        }
 
         public Form1() //初始化
         {
+
             InitializeComponent();
-            EmplyeelistInitialize();
-            
-            //filepathlog();
+            if (File.Exists(filePath))//判断默认位置是否有excel
+            {
+                EmplyeelistInitialize();
+            }
+            this.comboBox2.SelectedIndex = 0;
         }
 
         private void getTable() //获得源数据
@@ -56,31 +70,56 @@ namespace WindowsFormsApplication1
         }
         private void button1_Click(object sender, EventArgs e) //发送按钮
         {
-            try
+            if (emplyee.Count > 2)
             {
-                string emailtable = buildHtmlTable("CHYI");//需要更改：遍历员工名字来建立
+                int num = 0;
+                progressBar1.Visible = true;
+                progressBar1.Value = 3;
+                progressBar1.Maximum = emplyee.Count + 8;
+                progressBar1.BringToFront();
+                progressBar1.Show();
+                try
+                {
+                    string toolUser = string.Empty;
+                    toolUser = comboBox2.SelectedItem.ToString();
+                    exserviceSet(toolUser);
+                    progressBar1.Value += 3;
+                    //实例化每个emplyee
+                    foreach (string s in emplyee)
+                    {
+                        Emplyee temp = new Emplyee(s);
+                        temp.emailtable = buildHtmlTable(temp.alias);
+                        temp.emailBody = ReplaceText(temp.alias, toolUser, temp.emailtable);
+                        EmplyeeList.Add(temp);
+                    }
+                    //正式发邮件
+                    string emailTo = string.Empty;
+                    foreach (Emplyee em in EmplyeeList)
+                    {
+                        emailTo = "t-guch" + "@microsoft.com";
+                        if (sendEmailbyExchange(emailTo, em.emailBody)) { num++; };
+                        progressBar1.Value++;
 
-                string emailBody = ReplaceText("mike", "chen", "myname",emailtable);
-                string emailFrom = "t-guch@microsoft.com";
-                string emailTo = "t-guch" + "@microsoft.com";
-
-                bool x=sendEmailbyExchange(emailFrom, emailTo,emailBody);
-
-                MessageBox.Show(x.ToString());
+                    }
+                    //MessageBox.Show(x.ToString());
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                progressBar1.Hide();
+                progressBar1.Visible = false;
+                MessageBox.Show("send" + num.ToString() + "emails");
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
-
+            else { MessageBox.Show("Please get the Excel first!"); }
         }
 
         private void EmplyeelistInitialize() // 提取所有员工、并放入了下拉菜单（隐藏）
         {
             try
             {
+                emplyee.Clear();
                 getTable();
-
                 foreach (DataRow dr in dt.Rows)
                 {
                     string alias = dr["Column18"].ToString();
@@ -100,8 +139,9 @@ namespace WindowsFormsApplication1
             {
                 MessageBox.Show(ex.Message);
             }
+            button1.Enabled = true;
         }
-        private string buildHtmlTable(string emplyeename)//根据员工姓名建立html表格
+        public string buildHtmlTable(string emplyeename)//根据员工姓名建立html表格
         {
             string htmltable = string.Empty;
             
@@ -169,24 +209,30 @@ namespace WindowsFormsApplication1
             return htmltable;
         }
 
+        private bool exserviceSet(string sender)//设置Exchange Service
+        {
+            //Exservice.Credentials = new WebCredentials("t-guch@microsoft.com", "Mike704@ms");
+            Exservice.UseDefaultCredentials = true;
+            Exservice.TraceEnabled = true;
+            Exservice.TraceFlags = TraceFlags.All;
+            string myEmailaddress = sender + "@microsoft.com";
+            Exservice.AutodiscoverUrl(myEmailaddress, RedirectionUrlValidationCallback);//发件人
+
+            //if AutodiscoverUrl worked
+            var y= Exservice.Url;
+            if (y == null) return false;
+            return true; }
+
         //理论上发送成功返回true
-        private bool sendEmailbyExchange(string emailfrom,string emailto,string emailbody)
+        private bool sendEmailbyExchange(string emailto,string emailbody)
         {
             try
             {
-                //Exservice.Credentials = new WebCredentials("t-guch@microsoft.com", "Mike704@ms");
-                Exservice.UseDefaultCredentials = true;
-                Exservice.TraceEnabled = true;
-                Exservice.TraceFlags = TraceFlags.All;
-                Exservice.AutodiscoverUrl(emailfrom, RedirectionUrlValidationCallback);//发件人
-                                                                                       //if AutodiscoverUrl worked
                 EmailMessage email = new EmailMessage(Exservice);
                 email.ToRecipients.Add(emailto);//收件人
-
                 email.Subject = "TEST Email for SRwait alart";
                 email.Body = new MessageBody(emailbody);
                 email.Body.BodyType = Microsoft.Exchange.WebServices.Data.BodyType.HTML;
-                
                 email.Send();
             }
             catch(Exception ex) { Console.WriteLine(ex.Message); return false;  }
@@ -223,20 +269,14 @@ namespace WindowsFormsApplication1
 
         private void btnPath_Click(object sender, EventArgs e)
         {
-            FolderBrowserDialog dialog = new FolderBrowserDialog();
-            dialog.Description = "Please choose the filepath";
-            if (dialog.ShowDialog() == DialogResult.OK)
-            {
-                string foldpath = dialog.SelectedPath;
-
-            }
+            
         }
         #endregion
 
         /// <summary>     
         ///替换HTML模板中的字段值     
         /// </summary>     
-        public string ReplaceText(String userName, string name, string myName,string table)
+        public string ReplaceText(String userName, string myName,string table)
         {
 
             string html = string.Empty;
@@ -248,10 +288,8 @@ namespace WindowsFormsApplication1
             }
 
             html = html.Replace("$USER_NAME$", userName);
-            html = html.Replace("$NAME$", name);
-            html = html.Replace("$MY_NAME$", myName);
             html = html.Replace("$TABLEREPLACE$", table);
-
+            html = html.Replace("$MY_NAME$", myName);
             return html;
         }
 
@@ -400,6 +438,9 @@ namespace WindowsFormsApplication1
 
         }
 
+
         #endregion
     }
+
+    
 }
