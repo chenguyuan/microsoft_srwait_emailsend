@@ -12,6 +12,8 @@ using System.Text;
 using System.Web;
 using System.Reflection;
 using Microsoft.Exchange.WebServices.Data;
+using mshtml;
+using System.Threading;
 
 //考虑增加的功能：选择需要发送的工程师（checkedlistBox）
 
@@ -27,8 +29,16 @@ namespace WindowsFormsApplication1
         public string[] SRWaitstate = new string[] { "Pending 3rd party", "Pending CTS", "Pending Customer", "Pending Development", "Pending Operations", "Pending Premier", "Recovery", "Mitigated-Pending RFC", "Solution Delivered - Pending Confirmation", "Solution Delivered - Solution Confirmed" };
         public string[] SRWaitstateexplain = new string[] { "Select when the responsible party of current key action in this SR is a non-CSS team (for collaborations) or an outside 3rd party.", "The default case status on SR creation. Select when the responsible party of current key action in this SR is case owner. Also use when no other allowed wait state category is appropriate.","Select when the responsible party of current key action in this SR is customer/partner.", "Select when the responsible party of current key action in this SR is engineering group (for example Bugs / RFCs / Hotfixes / CFLs)", "DO NOT USE – see Pending Development","DO NOT USE", "DO NOT USE", "DO NOT USE – see Pending Development", "Select when the solution to the problem is offered to the customer/partner and we are waiting for customer/partner confirmation.", "Select when the customer/partner has successfully confirmed the offered solution is accepted by the customer/partner." };
         ExchangeService Exservice = new ExchangeService();//exchange连接
+        public string toolUser = "t-guch";//可能会删掉的参数
+        public HtmlElement elem = null;
+        public string elemstyle = string.Empty;
+        public string url = Environment.CurrentDirectory.ToString();
+        delegate void set_Elemstyle();
+        set_Elemstyle Set_Elemstyle;
 
-      
+        private Thread thread1;
+
+
 
         public partial class Emplyee
         {
@@ -44,15 +54,24 @@ namespace WindowsFormsApplication1
 
         public Form1() //初始化
         {
-
+            
             InitializeComponent();
-            textBox1.Text = Read("C:\\Users\\t-guch\\Source\\Repos\\NewRepo\\WindowsFormsApplication1\\LastFilePath.txt");
-            filePath = textBox1.Text.ToString();
+            if (File.Exists(url + "\\location.txt"))
+            {
+                filePath = Read(url + "\\location.txt");
+                textBox1.Text = filePath;
+            }
+            else
+            {
+                filePath = textBox1.Text.ToString();
+            }
+            
             if (File.Exists(filePath))//判断默认位置是否有excel
             {
                 EmplyeelistInitialize();
             }
             this.comboBox2.SelectedIndex = 0;
+            Set_Elemstyle = new set_Elemstyle(set_elemstylemike);
         }
 
         private void getTable() //获得源数据
@@ -76,7 +95,7 @@ namespace WindowsFormsApplication1
         {
             if (emplyee.Count > 2)
             {
-                int num = 0;
+                int num = 0;//计算发送邮件数量
                 progressBar1.Show();
                 progressBar1.Visible = true;
                 progressBar1.Maximum = emplyee.Count + 10;
@@ -87,7 +106,6 @@ namespace WindowsFormsApplication1
                 try
                 {
                     progressBar1.Value +=2;
-                    string toolUser = string.Empty;
                     toolUser = comboBox2.SelectedItem.ToString();
                     exserviceSet(toolUser);
                     progressBar1.Value += 3;
@@ -103,18 +121,31 @@ namespace WindowsFormsApplication1
                     string emailTo = string.Empty;
 
                     //测试用
-                    emailTo = "t-guch" + "@microsoft.com";
-                    if (sendEmailbyExchange(emailTo, EmplyeeList[2].emailBody)) { num++; };
-                    progressBar1.Value++;
-                    //正式代码
-                    //foreach (Emplyee em in EmplyeeList)
-                    //{
-                    //    emailTo = "t-guch" + "@microsoft.com";
-                    //    if (sendEmailbyExchange(emailTo, em.emailBody)) { num++; };
-                    //    progressBar1.Value++;
+                    if (checkBox1.Checked)
+                    {
+                        foreach (Emplyee em in EmplyeeList)
+                        {
+                            emailTo = toolUser + "@microsoft.com";
+                            if (sendEmailbyExchange(emailTo, em.emailBody)) { num++; };
+                            progressBar1.Value++;
 
-                    //}
-                    //MessageBox.Show(x.ToString());
+                        }
+                    }
+                    //正式代码
+                    else if (!(checkBox1.Checked))
+                    {
+                        foreach (Emplyee em in EmplyeeList)
+                        {
+                            emailTo = toolUser + "@microsoft.com";
+                            //emailTo = em.alias + "@microsoft.com";//正式发布时使用
+                            //if (sendEmailbyExchange(emailTo, em.emailBody)) { num++; };
+                            //progressBar1.Value++;
+
+
+
+                        }
+                    }
+                    
                 }
                 catch (Exception ex)
                 {
@@ -123,7 +154,7 @@ namespace WindowsFormsApplication1
                 progressBar1.Hide();
                 progressBar1.Visible = false;
                 label6.Visible = false;
-                MessageBox.Show("send" + num.ToString() + "emails");
+                MessageBox.Show("send " + num.ToString() + " emails");
             }
             else { MessageBox.Show("Please get the Excel first!"); }
         }
@@ -176,29 +207,38 @@ namespace WindowsFormsApplication1
                     }
                 }
 
+                int tempcount = 0;//确定到第几个state了
                 foreach (string statename in SRWaitstate)
                 {
-                    
+                    string stateexplain=SRWaitstateexplain[tempcount];
                     bool flag = false;//标记是不是写过标题栏了
+                    string longidle = string.Empty;
                     foreach (DataRow dr in temptable.Rows)
                     {
                         string state = dr["Column6"].ToString();
                         if (state == statename)
                         {
-                            if (flag == false)//写标题行
+                            
+                            if (flag == false)//写标题行 
                             {
                                 sb.Append("  <tr>");
-                                sb.Append("    <th colspan=\"5\" bgcolor=\"#4682B4\" class=\"titlemike\" scope=\"col\">SRWait State:" + statename + "</th>");
+                                sb.Append("    <th colspan=\"5\" height=\"40\" bgcolor=\"#4682B4\" class=\"titlemike\" scope=\"col\">SRWait State:" + statename + "</th>");
                                 sb.Append("  </tr>");
                                 sb.Append("  <tr>");
-                                sb.Append("    <th width=\"130\" bgcolor=\"#42B0B9\" class=\"titlemike\" scope =\"col\">Service Request Number</th>");
+                                sb.Append("    <th colspan=\"5\" height=\"40\" bgcolor=\"#4682B4\" class=\"titlemike2\" scope=\"col\">" + stateexplain + "</th>");
+                                sb.Append("  </tr>");
+                                sb.Append("  <tr>");
+                                sb.Append("    <th width=\"130\" bgcolor=\"#42B0B9\" class=\"titlemike3\" scope =\"col\">Service Request Number</th>");
                                 sb.Append("    <th nowrap bgcolor=\"#42B0B9\" class=\"titlemike\" scope=\"col\">SRTitle Internal</th>");
-                                sb.Append("    <th width=\"70\" bgcolor=\"#42B0B9\" class=\"titlemike\" scope=\"col\">Days Open</th>");
-                                sb.Append("    <th width=\"70\" bgcolor=\"#42B0B9\" class=\"titlemike\" scope=\"col\">Total Labor Minutes</th>");
-                                sb.Append("    <th width=\"120\" bgcolor=\"#42B0B9\" class=\"titlemike\" scope=\"col\"><p>Labor Idle");
+                                sb.Append("    <th width=\"80\" bgcolor=\"#42B0B9\" class=\"titlemike\" scope=\"col\">Days Open</th>");
+                                sb.Append("    <th width=\"80\" bgcolor=\"#42B0B9\" class=\"titlemike\" scope=\"col\">Total Labor Minutes</th>");
+                                sb.Append("    <th width=\"150\" bgcolor=\"#42B0B9\" class=\"titlemike\" scope=\"col\"><p>Labor Idle");
                                 sb.Append("    <strong>(days from last labor date)</strong></p></th>  ");
                                 sb.Append("  </tr>");
-                                sb.Append("<tr>");
+                                if (Convert.ToInt32(dr["Column5"]) >= 5)
+                                { longidle = "class=\"notemike\""; }
+                                else { longidle = ""; }
+                                sb.Append("<tr "+longidle+ " >");
                                 sb.Append("    <td align=\"center\"><a href=\"mssv://sr/?" + dr["Column1"] + "\">" + dr["Column1"] + "</a></td>");
                                 sb.Append("    <td align=\"center\">" + dr["Column2"] + "</td>");
                                 sb.Append("    <td align=\"center\">" + dr["Column3"] + "</td><td align=\"center\">" + dr["Column4"] + "</td><td align=\"center\">" + dr["Column5"] + "</td>");
@@ -207,7 +247,10 @@ namespace WindowsFormsApplication1
                             }
                             else
                             {
-                                sb.Append("<tr>");
+                                if (Convert.ToInt32(dr["Column5"]) >= 5)
+                                { longidle = "class=\"notemike\""; }
+                                else { longidle = ""; }
+                                sb.Append("<tr " + longidle + " >");
                                 sb.Append("    <td align=\"center\"><a href=\"mssv://sr/?" + dr["Column1"] + "\">" + dr["Column1"] + "</a></td>");
                                 sb.Append("    <td align=\"center\">" + dr["Column2"] + "</td>");
                                 sb.Append("    <td align=\"center\">" + dr["Column3"] + "</td><td align=\"center\">" + dr["Column4"] + "</td><td align=\"center\">" + dr["Column5"] + "</td>");
@@ -215,6 +258,7 @@ namespace WindowsFormsApplication1
                             }
                         }
                     }
+                    tempcount++;
                 }
             }
             sb.Append("</table>");
@@ -312,6 +356,12 @@ namespace WindowsFormsApplication1
 
         private void btnPath_Click(object sender, EventArgs e)//change file path
         {
+            HtmlElement elem = this.webBrowser1.Document.GetElementById("ReportViewerControl_AsyncWait_Wait");
+            if (elem != null)
+            {
+                String nameStr = elem.Style;
+                Console.WriteLine(nameStr);
+            }
             OpenFileDialog open = new OpenFileDialog();
             if (open.ShowDialog() == DialogResult.OK)
             {
@@ -319,7 +369,7 @@ namespace WindowsFormsApplication1
             }
             filePath = textBox1.Text.ToString();
             EmplyeelistInitialize();
-            EditFile(filePath, "C:\\Users\\t-guch\\Source\\Repos\\NewRepo\\WindowsFormsApplication1\\LastFilePath.txt");
+            EditFile(filePath, url + "\\location.txt");
         }
         public static void EditFile(string newLineValue, string patch)//修改patch
         {
@@ -344,19 +394,38 @@ namespace WindowsFormsApplication1
             }
         }
         public static int countnum = 0;
+        string content = string.Empty;
         private void webBrowser1_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
         {
-            if (countnum == 0)
+            if (countnum == 3)
             {
                 webBrowser1.Document.GetElementById("ReportViewerControl_ctl04_ctl00").InvokeMember("click");
                 countnum++;
+                Console.WriteLine("press search");
             }
+            IHTMLDocument2 doc = webBrowser1.Document.DomDocument as IHTMLDocument2;
+            content = doc.body.innerText;
         }
+
+        int navigatecount = 1;
+        void browser_Navigated(object sender, WebBrowserNavigatedEventArgs e)
+        {
+            if (navigatecount == 3)
+            {
+                webBrowser1.Document.GetElementById("ReportViewerControl_ctl04_ctl00").InvokeMember("click");
+                Console.WriteLine("press search");
+            }
+            navigatecount++;
+            Console.WriteLine(navigatecount.ToString());
+        }
+
 
         private void exitBtn_Click(object sender, EventArgs e)
         {
             try
             {
+                //if (thread1.IsAlive)
+                //{ thread1.Abort(); }
                 if (File.Exists(filePath))//判断默认位置是否有excel
                 {
                     File.Delete(filePath);
@@ -371,6 +440,33 @@ namespace WindowsFormsApplication1
 
         }
 
+        private void set_elemstylemike()
+        {
+            elem = this.webBrowser1.Document.GetElementById("ReportViewerControl_AsyncWait_Wait");
+            if (elem != null)
+            {
+                elemstyle = elem.Style;
+                Console.WriteLine(elemstyle + "this is another thread");
+            }
+        }
+
+        public void forthread()
+        {
+            Console.WriteLine("thread start");
+            for (int i = 1; i <= 100; i++)
+            {
+                Thread.Sleep(2000);
+                this.Invoke(Set_Elemstyle);
+            }
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            Uri uri = new Uri("http://gbs-sandbox/ReportServer?/CTS%20Reports/GBSDBI/SR%20Wellness/Case%20Wellness&LaborMins=0&UserRole=Team%20Manager&Alias=nichshen&Workgroup=GBS.OLSV.CN.APGC.CLOUD.CORE.SE.MS");
+            webBrowser1.Navigate(uri);
+            thread1 = new Thread(new ThreadStart(forthread));
+            thread1.Start();
+        }
     }
 
 
