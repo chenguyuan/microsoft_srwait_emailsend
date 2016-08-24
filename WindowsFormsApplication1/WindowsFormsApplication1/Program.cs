@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Threading;
 
-namespace WindowsFormsApplication1
+namespace SR_Wait_State_Summary
 {
     static class Program
     {
@@ -13,11 +13,11 @@ namespace WindowsFormsApplication1
         /// 应用程序的主入口点。
         /// </summary>
         [STAThread]
-        static void Main()
+        static void Main(string[] args)
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Form1());
+            Application.Run(new Form1(args));
             
 
         }

@@ -14,13 +14,18 @@ using System.Reflection;
 using Microsoft.Exchange.WebServices.Data;
 using mshtml;
 using System.Threading;
+using System.ComponentModel;
 
 //考虑增加的功能：选择需要发送的工程师（checkedlistBox）
 
-namespace WindowsFormsApplication1
+namespace SR_Wait_State_Summary
 {
     public partial class Form1 : Form
     {
+        
+        string[] args= {"","",""};//外部参数
+        bool test = false;//默认不是测试
+        bool auto = false;//默认不是自动
         public string filePath = "";//excel的存储地址,需要变动
         public List<string> emplyee = new List<string>(); //员工姓名列表
         public List<Emplyee> EmplyeeList = new List<Emplyee>();
@@ -32,11 +37,15 @@ namespace WindowsFormsApplication1
         public string toolUser = "t-guch";//可能会删掉的参数
         public HtmlElement elem = null;
         public string elemstyle = string.Empty;
-        public string url = Environment.CurrentDirectory.ToString();
+        public static string url = Environment.CurrentDirectory.ToString();
+        public StreamWriter log = new StreamWriter(url + "\\log.txt", true);
+        public string address = "http://gbs-sandbox/ReportServer/Pages/ReportViewer.aspx?/CTS%20Reports/GBSDBI/SR%20Wellness/Case%20Wellness&LaborMins=0&UserRole=Team%20Manager";
+        public string line;
+        public string add_alias; public string add_group;
         delegate void set_Elemstyle();
         set_Elemstyle Set_Elemstyle;
 
-        private Thread thread1;
+        //private Thread thread1;
 
 
 
@@ -52,18 +61,59 @@ namespace WindowsFormsApplication1
 
         }
 
-        public Form1() //初始化
+        public Form1(string[] args) //初始化
         {
-            
+            this.args = args;
+            foreach (string s in args)
+            { if (s == "-test") test = true;
+                if (s == "-auto") auto = true;
+            }
             InitializeComponent();
-            if (File.Exists(url + "\\location.txt"))
+            //从指定文件中读入参数
+            System.IO.StreamReader file = new System.IO.StreamReader(url + "\\parameters.txt");
+            int i;
+            i = 0;
+            while ((line = file.ReadLine()) != null && i<=10)
             {
-                filePath = Read(url + "\\location.txt");
-                textBox1.Text = filePath;
+                if (i == 0)
+                {
+                    add_alias = line;
+                    i++;
+                }
+                else if (i == 1)
+                {
+                    add_group = line;
+                    i++;
+                }
+            }
+            file.Close();
+            address = address + "&" + add_alias + "&" + add_group;
+            webBrowser1.Navigate(address);
+
+            //auto的话读location，不然的话读lastL
+            if (auto)
+            {
+                if (File.Exists(url + "\\location.txt"))
+                {
+                    filePath = Read(url + "\\location.txt");
+                    textBox1.Text = filePath;
+                }
+                else
+                {
+                    filePath = textBox1.Text.ToString();
+                }
             }
             else
             {
-                filePath = textBox1.Text.ToString();
+                if (File.Exists(url + "\\lastL.txt"))
+                {
+                    filePath = Read(url + "\\lastL.txt");
+                    textBox1.Text = filePath;
+                }
+                else
+                {
+                    filePath = textBox1.Text.ToString();
+                }
             }
             
             if (File.Exists(filePath))//判断默认位置是否有excel
@@ -72,6 +122,22 @@ namespace WindowsFormsApplication1
             }
             this.comboBox2.SelectedIndex = 0;
             Set_Elemstyle = new set_Elemstyle(set_elemstylemike);
+
+            //命令行执行自动发送
+            if (auto)
+            {
+                FileInfo fi = new FileInfo(filePath);
+                TimeSpan t1 = System.DateTime.Now - fi.LastWriteTime;
+                if (Math.Abs(t1.Days) > 1)
+                {
+                    log.WriteLine("Please check the Subscription of the case wellness, the Excel hasn't been update in two days. log time: " + System.DateTime.Now.ToString());
+                }
+                else
+                {
+                    auto_Click();
+                }
+                System.Environment.Exit(0);
+            }
         }
 
         private void getTable() //获得源数据
@@ -91,6 +157,76 @@ namespace WindowsFormsApplication1
                 MessageBox.Show(ex.Message);
             }
         }
+        private void auto_Click()
+        {
+            if (emplyee.Count >=1)
+            {
+                int num = 0;//计算发送邮件数量
+                progressBar1.Show();
+                progressBar1.Visible = true;
+                progressBar1.Maximum = emplyee.Count + 10;
+                progressBar1.Value = 2;
+                progressBar1.BringToFront();
+                label6.Visible = true;
+
+                try
+                {
+                    progressBar1.Value += 2;
+                    toolUser = comboBox2.SelectedItem.ToString();
+                    exserviceSet(toolUser);
+                    progressBar1.Value += 3;
+                    //实例化每个emplyee
+                    foreach (string s in emplyee)
+                    {
+                        Emplyee temp = new Emplyee(s);
+                        temp.emailtable = buildHtmlTable(temp.alias);
+                        temp.emailBody = ReplaceText(temp.alias, toolUser, temp.emailtable);
+                        EmplyeeList.Add(temp);
+                    }
+                    //正式发邮件
+                    string emailTo = string.Empty;
+
+                    //测试用
+                    if (checkBox1.Checked || test)
+                    {
+                        //emailTo = toolUser + "@microsoft.com";
+                        //if (sendEmailbyExchange(emailTo, EmplyeeList[4].emailBody)) { num++; };
+                        //progressBar1.Value++;
+                        foreach (Emplyee em in EmplyeeList)
+                        {
+                            emailTo = toolUser + "@microsoft.com";
+                            if (sendEmailbyExchange(emailTo, em.emailBody)) { num++; };
+                            progressBar1.Value++;
+
+                        }
+                    }
+                    //正式代码
+                    else if (!(checkBox1.Checked))
+                    {
+                        foreach (Emplyee em in EmplyeeList)
+                        {
+                            //emailTo = toolUser + "@microsoft.com";
+                            emailTo = em.alias + "@microsoft.com";//正式发布时使用
+                            if (sendEmailbyExchange(emailTo, em.emailBody)) { num++; };
+                            progressBar1.Value++;
+                        }
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+                progressBar1.Hide();
+                progressBar1.Visible = false;
+                label6.Visible = false;
+                log.WriteLine("send " + num.ToString() + " emails at "+ System.DateTime.Now.ToString());
+                log.Close();
+            }
+            else { MessageBox.Show("Please make sure excel and data exist!"); 
+            }
+        }
+
         private void button1_Click(object sender, EventArgs e) //发送按钮
         {
             if (emplyee.Count > 2)
@@ -121,8 +257,11 @@ namespace WindowsFormsApplication1
                     string emailTo = string.Empty;
 
                     //测试用
-                    if (checkBox1.Checked)
+                    if (checkBox1.Checked||test)
                     {
+                        //emailTo = toolUser + "@microsoft.com";
+                        //if (sendEmailbyExchange(emailTo, EmplyeeList[4].emailBody)) { num++; };
+                        //progressBar1.Value++;
                         foreach (Emplyee em in EmplyeeList)
                         {
                             emailTo = toolUser + "@microsoft.com";
@@ -136,10 +275,10 @@ namespace WindowsFormsApplication1
                     {
                         foreach (Emplyee em in EmplyeeList)
                         {
-                            emailTo = toolUser + "@microsoft.com";
-                            //emailTo = em.alias + "@microsoft.com";//正式发布时使用
-                            //if (sendEmailbyExchange(emailTo, em.emailBody)) { num++; };
-                            //progressBar1.Value++;
+                            //emailTo = toolUser + "@microsoft.com";
+                            emailTo = em.alias + "@microsoft.com";//正式发布时使用
+                            if (sendEmailbyExchange(emailTo, em.emailBody)) { num++; };
+                            progressBar1.Value++;
 
 
 
@@ -206,44 +345,56 @@ namespace WindowsFormsApplication1
                         temptable.ImportRow(dr);
                     }
                 }
-
+                //按照最近交流时间进行排序
+                DataTable temptableSort = temptable.Copy();
+                DataView dv = temptable.DefaultView;
+                dv.Sort = "Column7";
+                temptableSort = dv.ToTable();
+                bool flag2 = true;//标记是不是第一行了
                 int tempcount = 0;//确定到第几个state了
                 foreach (string statename in SRWaitstate)
                 {
                     string stateexplain=SRWaitstateexplain[tempcount];
                     bool flag = false;//标记是不是写过标题栏了
+
                     string longidle = string.Empty;
-                    foreach (DataRow dr in temptable.Rows)
+                    foreach (DataRow dr in temptableSort.Rows)
                     {
                         string state = dr["Column6"].ToString();
                         if (state == statename)
                         {
-                            
+
                             if (flag == false)//写标题行 
                             {
+                                if (flag2 == false)
+                                { 
                                 sb.Append("  <tr>");
-                                sb.Append("    <th colspan=\"5\" height=\"40\" bgcolor=\"#4682B4\" class=\"titlemike\" scope=\"col\">SRWait State:" + statename + "</th>");
+                                sb.Append("    <th colspan=\"6\" height=\"2\" bgcolor=\"#cccccc\" scope=\"col\"></th>");
+                                sb.Append("  </tr>");
+                                    
+                                }
+                                sb.Append("  <tr>");
+                                sb.Append("    <th colspan=\"6\" height=\"35\" bgcolor=\"#4682B4\" class=\"titlemike\" scope=\"col\">" + statename + "</th>");
                                 sb.Append("  </tr>");
                                 sb.Append("  <tr>");
-                                sb.Append("    <th colspan=\"5\" height=\"40\" bgcolor=\"#4682B4\" class=\"titlemike2\" scope=\"col\">" + stateexplain + "</th>");
+                                sb.Append("    <th width=\"130\" bgcolor=\"#42B0B9\" class=\"titlemike3\" scope =\"col\">Case ID</th>");
+                                sb.Append("    <th nowrap bgcolor=\"#42B0B9\" class=\"titlemike\" scope=\"col\">SR Title</th>");
+                                sb.Append("    <th width=\"60\" bgcolor=\"#42B0B9\" class=\"titlemike\" scope=\"col\">Last Communication</th>");
+                                sb.Append("    <th width=\"70\" bgcolor=\"#42B0B9\" class=\"titlemike\" scope=\"col\">Days Open</th>");
+                                sb.Append("    <th width=\"60\" bgcolor=\"#42B0B9\" class=\"titlemike\" scope=\"col\">Labor</th>");
+                                sb.Append("    <th width=\"70\" bgcolor=\"#42B0B9\" class=\"titlemike\" scope=\"col\">Idle Days</th>");
                                 sb.Append("  </tr>");
-                                sb.Append("  <tr>");
-                                sb.Append("    <th width=\"130\" bgcolor=\"#42B0B9\" class=\"titlemike3\" scope =\"col\">Service Request Number</th>");
-                                sb.Append("    <th nowrap bgcolor=\"#42B0B9\" class=\"titlemike\" scope=\"col\">SRTitle Internal</th>");
-                                sb.Append("    <th width=\"80\" bgcolor=\"#42B0B9\" class=\"titlemike\" scope=\"col\">Days Open</th>");
-                                sb.Append("    <th width=\"80\" bgcolor=\"#42B0B9\" class=\"titlemike\" scope=\"col\">Total Labor Minutes</th>");
-                                sb.Append("    <th width=\"150\" bgcolor=\"#42B0B9\" class=\"titlemike\" scope=\"col\"><p>Labor Idle");
-                                sb.Append("    <strong>(days from last labor date)</strong></p></th>  ");
-                                sb.Append("  </tr>");
+
                                 if (Convert.ToInt32(dr["Column5"]) >= 5)
                                 { longidle = "class=\"notemike\""; }
                                 else { longidle = ""; }
                                 sb.Append("<tr "+longidle+ " >");
-                                sb.Append("    <td align=\"center\"><a href=\"mssv://sr/?" + dr["Column1"] + "\">" + dr["Column1"] + "</a></td>");
-                                sb.Append("    <td align=\"center\">" + dr["Column2"] + "</td>");
-                                sb.Append("    <td align=\"center\">" + dr["Column3"] + "</td><td align=\"center\">" + dr["Column4"] + "</td><td align=\"center\">" + dr["Column5"] + "</td>");
+                                sb.Append("    <td align=\"center\" class=\"mike\"><a href=\"mssv://sr/?" + dr["Column1"] + "\">" + dr["Column1"] + "</a></td>");
+                                sb.Append("    <td align=\"center\" class=\"mike\">" + dr["Column2"] + "</td><td align=\"center\" class=\"mike\">" + dr["Column7"] + "</td>");
+                                sb.Append("    <td align=\"center\" class=\"mike\">" + dr["Column3"] + "</td><td align=\"center\" class=\"mike\">" + dr["Column4"] + "</td><td align=\"center\" class=\"mike\">" + dr["Column5"] + "</td>");
                                 sb.Append("  </tr>");
                                 flag = true;
+                                flag2 = false;
                             }
                             else
                             {
@@ -251,9 +402,9 @@ namespace WindowsFormsApplication1
                                 { longidle = "class=\"notemike\""; }
                                 else { longidle = ""; }
                                 sb.Append("<tr " + longidle + " >");
-                                sb.Append("    <td align=\"center\"><a href=\"mssv://sr/?" + dr["Column1"] + "\">" + dr["Column1"] + "</a></td>");
-                                sb.Append("    <td align=\"center\">" + dr["Column2"] + "</td>");
-                                sb.Append("    <td align=\"center\">" + dr["Column3"] + "</td><td align=\"center\">" + dr["Column4"] + "</td><td align=\"center\">" + dr["Column5"] + "</td>");
+                                sb.Append("    <td align=\"center\" class=\"mike\"><a href=\"mssv://sr/?" + dr["Column1"] + "\">" + dr["Column1"] + "</a></td>");
+                                sb.Append("    <td align=\"center\" class=\"mike\">" + dr["Column2"] + "</td><td align=\"center\" class=\"mike\">" + dr["Column7"] + "</td>");
+                                sb.Append("    <td align=\"center\" class=\"mike\">" + dr["Column3"] + "</td><td align=\"center\" class=\"mike\">" + dr["Column4"] + "</td><td align=\"center\" class=\"mike\">" + dr["Column5"] + "</td>");
                                 sb.Append("  </tr>");
                             }
                         }
@@ -289,7 +440,7 @@ namespace WindowsFormsApplication1
             {
                 EmailMessage email = new EmailMessage(Exservice);
                 email.ToRecipients.Add(emailto);//收件人
-                email.Subject = "TEST Email for SRwait alart";
+                email.Subject = "SR Wait State Summary was executed at "+System.DateTime.Now.ToString();
                 email.Body = new MessageBody(emailbody);
                 email.Body.BodyType = Microsoft.Exchange.WebServices.Data.BodyType.HTML;
                 email.Send();
@@ -356,20 +507,24 @@ namespace WindowsFormsApplication1
 
         private void btnPath_Click(object sender, EventArgs e)//change file path
         {
-            HtmlElement elem = this.webBrowser1.Document.GetElementById("ReportViewerControl_AsyncWait_Wait");
-            if (elem != null)
+            try
             {
-                String nameStr = elem.Style;
-                Console.WriteLine(nameStr);
+                HtmlElement elem = this.webBrowser1.Document.GetElementById("ReportViewerControl_AsyncWait_Wait");
+                if (elem != null)
+                {
+                    String nameStr = elem.Style;
+                    Console.WriteLine(nameStr);
+                }
+                OpenFileDialog open = new OpenFileDialog();
+                if (open.ShowDialog() == DialogResult.OK)
+                {
+                    textBox1.Text = open.FileName;
+                }
+                filePath = textBox1.Text.ToString();
+                EmplyeelistInitialize();
+                EditFile(filePath, url + "\\lastL.txt"); 
             }
-            OpenFileDialog open = new OpenFileDialog();
-            if (open.ShowDialog() == DialogResult.OK)
-            {
-                textBox1.Text = open.FileName;
-            }
-            filePath = textBox1.Text.ToString();
-            EmplyeelistInitialize();
-            EditFile(filePath, url + "\\location.txt");
+            catch (Exception Ex) { throw Ex; }
         }
         public static void EditFile(string newLineValue, string patch)//修改patch
         {
@@ -407,6 +562,16 @@ namespace WindowsFormsApplication1
             content = doc.body.innerText;
         }
 
+        private void WebBrowser1_NewWindow(Object sender, CancelEventArgs e)
+        {
+
+            System.Text.StringBuilder messageBoxCS = new System.Text.StringBuilder();
+            messageBoxCS.AppendFormat("{0} = {1}", "Cancel", e.Cancel);
+            messageBoxCS.AppendLine();
+            MessageBox.Show(messageBoxCS.ToString(), "NewWindow Event");
+        }
+
+
         int navigatecount = 1;
         void browser_Navigated(object sender, WebBrowserNavigatedEventArgs e)
         {
@@ -422,13 +587,15 @@ namespace WindowsFormsApplication1
 
         private void exitBtn_Click(object sender, EventArgs e)
         {
+            
+            log.Close();
             try
             {
                 //if (thread1.IsAlive)
                 //{ thread1.Abort(); }
                 if (File.Exists(filePath))//判断默认位置是否有excel
                 {
-                    File.Delete(filePath);
+                    //File.Delete(filePath);
                 }
             }
             catch (Exception ex)
@@ -450,22 +617,22 @@ namespace WindowsFormsApplication1
             }
         }
 
-        public void forthread()
-        {
-            Console.WriteLine("thread start");
-            for (int i = 1; i <= 100; i++)
-            {
-                Thread.Sleep(2000);
-                this.Invoke(Set_Elemstyle);
-            }
-        }
+        //public void forthread()
+        //{
+        //    Console.WriteLine("thread start");
+        //    for (int i = 1; i <= 100; i++)
+        //    {
+        //        Thread.Sleep(2000);
+        //        this.Invoke(Set_Elemstyle);
+        //    }
+        //}
 
         private void button2_Click(object sender, EventArgs e)
         {
-            Uri uri = new Uri("http://gbs-sandbox/ReportServer?/CTS%20Reports/GBSDBI/SR%20Wellness/Case%20Wellness&LaborMins=0&UserRole=Team%20Manager&Alias=nichshen&Workgroup=GBS.OLSV.CN.APGC.CLOUD.CORE.SE.MS");
-            webBrowser1.Navigate(uri);
-            thread1 = new Thread(new ThreadStart(forthread));
-            thread1.Start();
+            //Uri uri = new Uri("http://gbs-sandbox/ReportServer?/CTS%20Reports/GBSDBI/SR%20Wellness/Case%20Wellness&LaborMins=0&UserRole=Team%20Manager&Alias=nichshen&Workgroup=GBS.OLSV.CN.APGC.CLOUD.CORE.SE.MS");
+            //webBrowser1.Navigate(uri);
+            //thread1 = new Thread(new ThreadStart(forthread));
+            //thread1.Start();
         }
     }
 

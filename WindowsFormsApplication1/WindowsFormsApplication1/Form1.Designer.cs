@@ -1,4 +1,4 @@
-﻿namespace WindowsFormsApplication1
+﻿namespace SR_Wait_State_Summary
 {
     partial class Form1
     {
@@ -46,6 +46,7 @@
             this.label6 = new System.Windows.Forms.Label();
             this.checkBox1 = new System.Windows.Forms.CheckBox();
             this.button2 = new System.Windows.Forms.Button();
+            this.label7 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // button1
@@ -131,14 +132,12 @@
             // 
             // webBrowser1
             // 
-            this.webBrowser1.Location = new System.Drawing.Point(464, 9);
+            this.webBrowser1.Location = new System.Drawing.Point(464, -486);
             this.webBrowser1.MinimumSize = new System.Drawing.Size(20, 20);
             this.webBrowser1.Name = "webBrowser1";
-            this.webBrowser1.Size = new System.Drawing.Size(198, 569);
+            this.webBrowser1.Size = new System.Drawing.Size(198, 922);
             this.webBrowser1.TabIndex = 7;
-            this.webBrowser1.Url = new System.Uri("http://gbs-sandbox/ReportServer?/CTS%20Reports/GBSDBI/SR%20Wellness/Case%20Wellne" +
-        "ss&LaborMins=0&UserRole=Team%20Manager&Alias=nichshen&Workgroup=GBS.OLSV.CN.APGC" +
-        ".CLOUD.CORE.SE.MS", System.UriKind.Absolute);
+            this.webBrowser1.Url = new System.Uri("", System.UriKind.Relative);
             this.webBrowser1.DocumentCompleted += new System.Windows.Forms.WebBrowserDocumentCompletedEventHandler(this.webBrowser1_DocumentCompleted);
             this.webBrowser1.Navigated += new System.Windows.Forms.WebBrowserNavigatedEventHandler(this.browser_Navigated);
             // 
@@ -186,14 +185,14 @@
             this.label5.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label5.Location = new System.Drawing.Point(12, 373);
             this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(254, 20);
+            this.label5.Size = new System.Drawing.Size(92, 20);
             this.label5.TabIndex = 12;
-            this.label5.Text = "5. See You! (and delete the Excel )";
+            this.label5.Text = "5. See You!";
             // 
             // exitBtn
             // 
             this.exitBtn.BackColor = System.Drawing.SystemColors.Control;
-            this.exitBtn.BackgroundImage = global::WindowsFormsApplication1.Properties.Resources.Power___Logoff;
+            this.exitBtn.BackgroundImage = global::SR_Wait_State_Summary.Properties.Resources.Power___Logoff;
             this.exitBtn.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.exitBtn.Location = new System.Drawing.Point(16, 396);
             this.exitBtn.Name = "exitBtn";
@@ -217,9 +216,7 @@
             // checkBox1
             // 
             this.checkBox1.AutoSize = true;
-            this.checkBox1.Checked = true;
-            this.checkBox1.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBox1.Location = new System.Drawing.Point(205, 47);
+            this.checkBox1.Location = new System.Drawing.Point(185, 52);
             this.checkBox1.Name = "checkBox1";
             this.checkBox1.Size = new System.Drawing.Size(79, 17);
             this.checkBox1.TabIndex = 15;
@@ -237,12 +234,21 @@
             this.button2.Visible = false;
             this.button2.Click += new System.EventHandler(this.button2_Click);
             // 
+            // label7
+            // 
+            this.label7.AutoSize = true;
+            this.label7.Location = new System.Drawing.Point(182, 127);
+            this.label7.Name = "label7";
+            this.label7.Size = new System.Drawing.Size(200, 13);
+            this.label7.TabIndex = 17;
+            this.label7.Text = "Please wait until the webbrowser is ready";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(674, 590);
-            this.ControlBox = false;
+            this.ClientSize = new System.Drawing.Size(674, 455);
+            this.Controls.Add(this.label7);
             this.Controls.Add(this.button2);
             this.Controls.Add(this.webBrowser1);
             this.Controls.Add(this.checkBox1);
@@ -264,7 +270,7 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
             this.Name = "Form1";
-            this.Text = "SRWait Reminder";
+            this.Text = "SR_Wait_State_Summary";
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -289,6 +295,7 @@
         private System.Windows.Forms.Label label6;
         private System.Windows.Forms.CheckBox checkBox1;
         private System.Windows.Forms.Button button2;
+        private System.Windows.Forms.Label label7;
     }
 }
 

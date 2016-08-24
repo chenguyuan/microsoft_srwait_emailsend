@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace WindowsFormsApplication1 {
+namespace SR_Wait_State_Summary {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace WindowsFormsApplication1 {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("WindowsFormsApplication1.Resource1", typeof(Resource1).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("SR_Wait_State_Summary.Resource1", typeof(Resource1).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -61,24 +61,27 @@ namespace WindowsFormsApplication1 {
         }
         
         /// <summary>
-        ///   查找类似 &lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD XHTML 1.0 Transitional//EN&quot; &quot;http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd&quot;&gt;    
-        ///&lt;html xmlns=&quot;http://www.w3.org/1999/xhtml&quot; &gt;    
-        ///&lt;head&gt;    
-        ///    &lt;title&gt;HTML Report&lt;/title&gt;    
-        ///&lt;/head&gt;    
-        ///&lt;body&gt;    
-        ///&lt;p &gt;$USER_NAME$:&lt;/p&gt;    
-        ///    
-        ///    
-        ///&lt;p&gt;My name is $NAME$&lt;/p&gt;    
-        ///
-        ///    here is table 1 :%tablereplacement%
-        ///
-        ///
-        ///&lt;p &gt;This is a Test Email,&lt;br /&gt;    
-        ///  $MY_NAME$&lt;/p&gt;    
-        ///&lt;/body&gt;    
-        ///&lt;/html&gt;     的本地化字符串。
+        ///   查找类似 &lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD XHTML 1.0 Transitional//EN&quot; &quot;http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd&quot;&gt;
+        ///&lt;html xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;
+        ///&lt;head&gt;
+        ///    &lt;title&gt;HTML Report&lt;/title&gt;
+        ///    &lt;style type=&quot;text/css&quot;&gt;
+        ///        .notemike {
+        ///            color: #F00;
+        ///        }
+        ///        .titlemike {
+        ///	color: #FFF;
+        ///    font-size:20px;
+        ///}
+        ///                .titlemike2 {
+        ///	color: #FFF;
+        ///    font-size:16px;
+        ///}
+        ///                        .titlemike3 {
+        ///	color: #FFF;
+        ///    font-size:18px;
+        ///}
+        ///    &lt;/st [字符串的其余部分被截断]&quot;; 的本地化字符串。
         /// </summary>
         internal static string emailTemplate {
             get {

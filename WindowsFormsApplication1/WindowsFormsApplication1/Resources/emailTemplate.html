@@ -3,33 +3,55 @@
 <head>
     <title>HTML Report</title>
     <style type="text/css">
+        ul{margin:0px;padding:0px} 
+        
         .notemike {
+            font-family: Calibri;
+            font-size:14.5px;
             color: #F00;
         }
         .titlemike {
+
 	color: #FFF;
-    font-size:20px;
+    font-family: Calibri;
+    font-size:14.5px;
 }
                 .titlemike2 {
 	color: #FFF;
-    font-size:16px;
+        font-family: Calibri;
+    font-size:14.5px;
 }
                         .titlemike3 {
 	color: #FFF;
-    font-size:18px;
+        font-family: Calibri;
+    font-size:14.5px;
+}
+                        .mike {
+	font-family: Calibri;
+	font-size: 14.5px;
 }
     </style>
 </head>
 <body>
-    <p>Hi $USER_NAME$,</p>
-
-
-    <p>Please find  below a summary of your case wait state.&nbsp;Please follow the <strong><a href="https://sharepoint.partners.extranet.microsoft.com/sites/Onestop/BPM/Pages/Specials/CCE-View.aspx">Case  Management Standards</a></strong> and keep the &quot;SR Wait State&rdquo; to reflect the  current status of the case.<strong></strong></p>
-
+    
+    <p>
+        <span class="mike">Hi $USER_NAME$,</span><br />
+    </p>
+    <p>
+        <span class="mike">Please find below a summary of your SR Wait State.&nbsp;Please follow the <strong><a href="https://sharepoint.partners.extranet.microsoft.com/sites/Onestop/BPM/Pages/Specials/CCE-View.aspx">Case  Management Standards</a></strong> and keep the &quot;SR Wait State&rdquo; to reflect  the current status of the case.</span>
+    </p>
 
     $TABLEREPLACE$
 
-    <p class="notemike"><em>NOTE:The red highlight lines are long idle days cases.</em></p>
-    <p>Best Regards</p>
+   
+
+                <ul >
+                    <li class="mike" style="list-style-type:none"><strong>Note:</strong></li>
+                    <li class="mike">   &nbsp; &bull; The <span class="notemike">red</span> highlight lines are cases with idle days  &gt; 5.</li>
+                    <li class="mike">  &nbsp;  &bull; Please  follow<a href="https://sharepoint.partners.extranet.microsoft.com/sites/OneStop/BPM/Pages/DisplayForm.aspx?List=%7bF0900088-F118-48A4-8618-DC2D38646B41%7d&amp;ID=506"> procedure</a>, accurately maintain <strong>SR Wait State</strong> timely and in order.</li>
+                    <li class="mike">   &nbsp; &bull; &quot;Idle Days&quot; is days from last labor date.</li>
+                </ul>
+
+    
 </body>
 </html>    
