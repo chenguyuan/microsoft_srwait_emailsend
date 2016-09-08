@@ -15,6 +15,7 @@ using Microsoft.Exchange.WebServices.Data;
 using mshtml;
 using System.Threading;
 using System.ComponentModel;
+using System.Text.RegularExpressions;
 
 //考虑增加的功能：选择需要发送的工程师（checkedlistBox）
 
@@ -34,7 +35,8 @@ namespace SR_Wait_State_Summary
         public string[] SRWaitstate = new string[] { "Pending 3rd party", "Pending CTS", "Pending Customer", "Pending Development", "Pending Operations", "Pending Premier", "Recovery", "Mitigated-Pending RFC", "Solution Delivered - Pending Confirmation", "Solution Delivered - Solution Confirmed" };
         public string[] SRWaitstateexplain = new string[] { "Select when the responsible party of current key action in this SR is a non-CSS team (for collaborations) or an outside 3rd party.", "The default case status on SR creation. Select when the responsible party of current key action in this SR is case owner. Also use when no other allowed wait state category is appropriate.","Select when the responsible party of current key action in this SR is customer/partner.", "Select when the responsible party of current key action in this SR is engineering group (for example Bugs / RFCs / Hotfixes / CFLs)", "DO NOT USE – see Pending Development","DO NOT USE", "DO NOT USE", "DO NOT USE – see Pending Development", "Select when the solution to the problem is offered to the customer/partner and we are waiting for customer/partner confirmation.", "Select when the customer/partner has successfully confirmed the offered solution is accepted by the customer/partner." };
         ExchangeService Exservice = new ExchangeService();//exchange连接
-        public string toolUser = "t-guch";//可能会删掉的参数
+        public string toolUser = "";//可能会删掉的参数
+        public string testemail = "";
         public HtmlElement elem = null;
         public string elemstyle = string.Empty;
         public static string url = Environment.CurrentDirectory.ToString();
@@ -64,9 +66,11 @@ namespace SR_Wait_State_Summary
         public Form1(string[] args) //初始化
         {
             this.args = args;
-            foreach (string s in args)
-            { if (s == "-test") test = true;
-                if (s == "-auto") auto = true;
+            foreach (string str in args)
+            {
+                string s = str.Remove(0,1);
+                if (IsEmail(s)) { test = true; testemail = s; }
+                if (s == "auto") auto = true;
             }
             InitializeComponent();
             //从指定文件中读入参数
@@ -128,9 +132,10 @@ namespace SR_Wait_State_Summary
             {
                 FileInfo fi = new FileInfo(filePath);
                 TimeSpan t1 = System.DateTime.Now - fi.LastWriteTime;
-                if (Math.Abs(t1.Days) > 1)
+                if ((Math.Abs(t1.Days) >= 1)||(Math.Abs(t1.Hours)>=2))
                 {
-                    log.WriteLine("Please check the Subscription of the case wellness, the Excel hasn't been update in two days. log time: " + System.DateTime.Now.ToString());
+                    log.WriteLine("Please check the Subscription of the case wellness, the Excel hasn't been update. log time: " + System.DateTime.Now.ToString());
+                    log.Close();
                 }
                 else
                 {
@@ -138,6 +143,25 @@ namespace SR_Wait_State_Summary
                 }
                 System.Environment.Exit(0);
             }
+        }
+
+        public static bool IsEmail(string email)
+        {
+            //如果为空，认为验证不合格
+            if (string.IsNullOrEmpty(email))
+            {
+                return false;
+            }
+
+            //清除要验证字符串中的空格
+            email = email.Trim();
+
+            //模式字符串
+            string pattern = @"^([0-9a-zA-Z]([-.\w]*[0-9a-zA-Z])*@([0-9a-zA-Z][-\w]*[0-9a-zA-Z]\.)+[a-zA-Z]{2,9})$";
+
+            //验证
+            Regex RegexHelper = new Regex(pattern);
+            return RegexHelper.IsMatch(email);
         }
 
         private void getTable() //获得源数据
@@ -194,7 +218,8 @@ namespace SR_Wait_State_Summary
                         //progressBar1.Value++;
                         foreach (Emplyee em in EmplyeeList)
                         {
-                            emailTo = toolUser + "@microsoft.com";
+                            emailTo = testemail;
+                            //emailTo = toolUser + "@microsoft.com";
                             if (sendEmailbyExchange(emailTo, em.emailBody)) { num++; };
                             progressBar1.Value++;
 
